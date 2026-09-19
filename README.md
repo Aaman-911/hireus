@@ -4,7 +4,7 @@
 
 ![HireUS](docs/hireus.webp)
 
-Built by **Aman Dixit** and **Kumar Shivam** as our minor project at MITS Gwalior.
+Built by **Aman Dixit** as a minor project at MITS Gwalior.
 
 ## What it does
 

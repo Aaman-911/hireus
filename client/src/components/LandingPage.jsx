@@ -104,8 +104,6 @@ export default function LandingPage() {
       >
         <div className="flex flex-col md:flex-row items-center gap-1 md:gap-4">
           <p>Aman Dixit <span className="hidden md:inline text-gray-400">—</span><span className="md:hidden"><br/></span> CSE 3rd Year</p>
-          <span className="hidden md:inline text-gray-300">•</span>
-          <p>Kumar Shivam <span className="hidden md:inline text-gray-400">—</span><span className="md:hidden"><br/></span> CSE 3rd Year</p>
         </div>
         <p className="pt-1 text-gray-400/50 text-xs tracking-wider uppercase">MITS Gwalior</p>
       </footer>
