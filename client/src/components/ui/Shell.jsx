@@ -73,38 +73,40 @@ export default function Shell({ children }) {
   const [overStageByPath, setOverStageByPath] = useState({});
   const overStage = overStageByPath[location.pathname] ?? isLanding;
 
-  // The nav only earns its hairline and blur once you have left the top.
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 12);
-    onScroll();
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
-
-  /**
-   * A page with dark stage bands marks where they end with
-   * `[data-stage-end]`. While that marker is still below the nav, whatever is
-   * behind the bar is black, so the bar has to invert — otherwise a white
-   * glass strip sits on top of the film.
+  /*
+   * One scroll handler drives both nav states.
+   *
+   * `scrolled` decides whether the bar shows its hairline and blur.
+   * `overStage` decides whether it inverts, by measuring where the page's
+   * `[data-stage-end]` marker currently sits: while that marker is still below
+   * the bar, the thing behind the bar is a dark band and a light glass strip
+   * on top of it looks wrong.
+   *
+   * This was an IntersectionObserver watching the same marker, but the marker
+   * is a zero-height div and observers do not fire reliably on elements with
+   * no area — so the bar stayed light over the dark bands.
    */
   useEffect(() => {
-    if (!isLanding) return undefined;
+    const HEADER = 44; // h-11
 
-    const sentinel = document.querySelector('[data-stage-end]');
-    if (!sentinel) return undefined;
+    const measure = () => {
+      setScrolled(window.scrollY > 12);
 
-    const path = location.pathname;
-    const observer = new IntersectionObserver(
-      ([entry]) =>
-        setOverStageByPath((prev) => ({
-          ...prev,
-          [path]: entry.boundingClientRect.top > 44,
-        })),
-      { rootMargin: '-44px 0px 0px 0px', threshold: 0 }
-    );
-    observer.observe(sentinel);
-    return () => observer.disconnect();
-  }, [isLanding, location.pathname]);
+      const sentinel = document.querySelector('[data-stage-end]');
+      const dark = Boolean(sentinel) && sentinel.getBoundingClientRect().top > HEADER;
+      setOverStageByPath((prev) =>
+        prev[location.pathname] === dark ? prev : { ...prev, [location.pathname]: dark }
+      );
+    };
+
+    measure();
+    window.addEventListener('scroll', measure, { passive: true });
+    window.addEventListener('resize', measure);
+    return () => {
+      window.removeEventListener('scroll', measure);
+      window.removeEventListener('resize', measure);
+    };
+  }, [location.pathname]);
 
   const onStage = overStage;
 

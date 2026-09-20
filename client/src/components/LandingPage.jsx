@@ -60,7 +60,12 @@ export default function LandingPage() {
   return (
     <>
       {/* ═══════════════════ STAGE — the marquee ═══════════════════ */}
-      <section className="stage relative overflow-hidden">
+      {/* Pulled up by the height of the sticky header (h-11 = 44px) so the
+          black extends behind it. The header sits in normal flow, so without
+          this the strip above the hero is the page background — invisible in
+          dark mode, a white band in light mode, with the white logo on top of
+          it. The inner top padding already clears the header. */}
+      <section className="stage relative -mt-11 overflow-hidden">
         <div className="wrap-wide flex min-h-[clamp(620px,100svh,900px)] flex-col justify-center pb-[clamp(56px,7vw,88px)] pt-[clamp(88px,12vw,140px)]">
           <div className="mx-auto max-w-[62rem] text-center">
             <p className="eyebrow rise">Mock interviewer</p>
