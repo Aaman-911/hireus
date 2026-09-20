@@ -1,0 +1,33 @@
+# Render blueprint for the HireUS API.
+#
+# Render is used for the server rather than a serverless host because a client
+# search can run for well over a minute, and Vercel's Hobby functions cap at
+# 60 seconds. Render has no request timeout.
+#
+# The free instance sleeps after 15 minutes idle and takes roughly 50 seconds
+# to wake, so open the site a minute before showing it to anyone.
+services:
+  - type: web
+    name: hireus-api
+    runtime: node
+    plan: free
+    rootDir: server
+    buildCommand: npm ci --omit=dev
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      # Set these in the Render dashboard, never in this file.
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: ADZUNA_APP_ID
+        sync: false
+      - key: ADZUNA_APP_KEY
+        sync: false
+      - key: ADZUNA_COUNTRY
+        value: in
+      # The deployed client's origin, e.g. https://hireus.pages.dev
+      # Without it the browser blocks every request.
+      - key: CORS_ORIGIN
+        sync: false

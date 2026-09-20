@@ -2,6 +2,12 @@ const axios = require('axios');
 
 const TIMEOUT = 12000;
 
+/** Markets Adzuna actually serves. Anything else is rejected, not escaped. */
+const ADZUNA_MARKETS = new Set([
+    'gb', 'us', 'at', 'au', 'be', 'br', 'ca', 'ch', 'de', 'es',
+    'fr', 'in', 'it', 'mx', 'nl', 'nz', 'pl', 'sg', 'za',
+]);
+
 
 /**
  * Free boards are multilingual and an Indian or US candidate searching in
@@ -70,8 +76,15 @@ async function fetchAdzuna(query, { country = 'in', limit = 12 } = {}) {
     const appKey = process.env.ADZUNA_APP_KEY;
     if (!appId || !appKey || appId === 'your_app_id_here') return [];
 
+    // The country goes into the URL *path*, so it is checked against a fixed
+    // list rather than escaped. A value like "gb/../../x" would otherwise
+    // redirect a request that carries the API key to another endpoint.
+    const market = ADZUNA_MARKETS.has(String(country).toLowerCase())
+        ? String(country).toLowerCase()
+        : 'in';
+
     const { data } = await axios.get(
-        `https://api.adzuna.com/v1/api/jobs/${country}/search/1`,
+        `https://api.adzuna.com/v1/api/jobs/${market}/search/1`,
         {
             params: { app_id: appId, app_key: appKey, results_per_page: limit, what: query },
             timeout: TIMEOUT,
@@ -287,4 +300,4 @@ async function aggregateJobs(query, { country = 'in', remoteOnly = false } = {})
     return { jobs: interleaved, sources };
 }
 
-module.exports = { aggregateJobs, stripHtml, truncate, extractSkills, looksEnglish };
+module.exports = { aggregateJobs, stripHtml, truncate, extractSkills, looksEnglish, ADZUNA_MARKETS };

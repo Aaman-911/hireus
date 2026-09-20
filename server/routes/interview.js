@@ -198,10 +198,7 @@ detailedQnA MUST contain one object for every question in the transcript, in ord
         res.json(parsed);
     } catch (error) {
         console.error('Error running deep analysis:', error);
-        res.status(502).json({
-            error: 'Failed to analyse the interview. Please try again.',
-            details: error.message,
-        });
+        res.status(502).json({ error: 'Failed to analyse the interview. Please try again.' });
     }
 });
 

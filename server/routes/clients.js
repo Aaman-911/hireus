@@ -96,7 +96,13 @@ Return ONLY valid JSON:
         // itself is plain HTTP against open databases and works perfectly
         // without the model. Only ranking and drafting are lost.
         console.warn('[clients] brief generation failed, using keyword routing:', error.message);
-        return { ...fallback, degraded: true, degradedReason: error.message };
+        // Only our own quota message is safe to show; anything else could
+        // carry an upstream URL or path.
+        const reason =
+            error.code === 'GEMINI_QUOTA'
+                ? error.message
+                : 'The AI service is unavailable right now.';
+        return { ...fallback, degraded: true, degradedReason: reason };
     }
 }
 
@@ -290,7 +296,7 @@ router.post('/find-clients', async (req, res) => {
         res.json(payload);
     } catch (error) {
         console.error('[clients] search failed:', error.message);
-        res.status(502).json({ error: 'Could not find client leads.', details: error.message });
+        res.status(502).json({ error: 'Could not find client leads.' });
     }
 });
 

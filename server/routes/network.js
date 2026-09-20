@@ -71,7 +71,7 @@ router.get('/hiring-contacts', async (req, res) => {
         res.json(payload);
     } catch (error) {
         console.error('[network] hiring contacts failed:', error.message);
-        res.status(502).json({ error: 'Could not load hiring contacts.', details: error.message });
+        res.status(502).json({ error: 'Could not load hiring contacts.' });
     }
 });
 
@@ -111,7 +111,7 @@ router.get('/company-contacts', async (req, res) => {
         res.json(payload);
     } catch (error) {
         console.error('[network] company contacts failed:', error.message);
-        res.status(502).json({ error: 'Could not load company contacts.', details: error.message });
+        res.status(502).json({ error: 'Could not load company contacts.' });
     }
 });
 
@@ -120,7 +120,8 @@ router.get('/hiring-thread', async (_req, res) => {
     try {
         res.json((await latestHiringThread()) || {});
     } catch (error) {
-        res.status(502).json({ error: error.message });
+        console.error('[network] hiring thread lookup failed:', error.message);
+        res.status(502).json({ error: 'Could not read the hiring thread.' });
     }
 });
 

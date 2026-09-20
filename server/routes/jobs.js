@@ -1,5 +1,5 @@
 const express = require('express');
-const { aggregateJobs } = require('../lib/jobSources');
+const { aggregateJobs, ADZUNA_MARKETS } = require('../lib/jobSources');
 const { generationModel, analysisModel, generateJson, hasGemini } = require('../lib/gemini');
 
 const router = express.Router();
@@ -124,7 +124,14 @@ const searchHandler = async (req, res) => {
 
     const max = Math.min(24, Math.max(3, Number(limit) || 9));
     const wantRemoteOnly = remoteOnly === 'true';
-    const cacheKey = JSON.stringify([targetRole, experience, industry, skills, country, wantRemoteOnly, max]);
+
+    // Validated here as well as in fetchAdzuna, so the value that gets logged
+    // and cached is the one actually used rather than raw user input.
+    const market = ADZUNA_MARKETS.has(String(country).toLowerCase())
+        ? String(country).toLowerCase()
+        : process.env.ADZUNA_COUNTRY || 'in';
+
+    const cacheKey = JSON.stringify([targetRole, experience, industry, skills, market, wantRemoteOnly, max]);
 
     const cached = cacheGet(cacheKey);
     if (cached) return res.json({ ...cached, cached: true });
@@ -135,9 +142,9 @@ const searchHandler = async (req, res) => {
                 ? await refineQuery({ targetRole, experience, industry, skills })
                 : targetRole;
 
-        console.log(`[jobs] aggregating for "${query}" (country=${country}, remoteOnly=${wantRemoteOnly})`);
+        console.log(`[jobs] aggregating for "${query}" (market=${market}, remoteOnly=${wantRemoteOnly})`);
 
-        const { jobs, sources } = await aggregateJobs(query, { country, remoteOnly: wantRemoteOnly });
+        const { jobs, sources } = await aggregateJobs(query, { country: market, remoteOnly: wantRemoteOnly });
 
         if (jobs.length === 0) {
             return res.json({
@@ -155,7 +162,7 @@ const searchHandler = async (req, res) => {
         res.json(payload);
     } catch (error) {
         console.error('[jobs] search failed:', error.message);
-        res.status(502).json({ error: 'Failed to fetch job listings.', details: error.message });
+        res.status(502).json({ error: 'Failed to fetch job listings.' });
     }
 };
 

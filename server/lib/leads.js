@@ -229,10 +229,12 @@ async function searchHiring(terms, { limit = 25 } = {}) {
  * precisely so strangers can reach them; roughly one founder in ten does.
  */
 async function profileEmail(username) {
-    if (!username) return null;
+    // The name comes from an external API, so it is restricted to the
+    // characters HN actually allows before being put into a URL path.
+    if (!username || !/^[A-Za-z0-9_-]{1,32}$/.test(String(username))) return null;
     try {
         const { data } = await axios.get(
-            `https://hacker-news.firebaseio.com/v0/user/${username}.json`,
+            `https://hacker-news.firebaseio.com/v0/user/${encodeURIComponent(username)}.json`,
             { timeout: 8000 }
         );
         const about = clean(data?.about || '');
