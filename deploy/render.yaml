@@ -1,3 +1,6 @@
+# Move this file to the repository root to deploy the API on Render.
+# It lives here because the Vercel CLI mistakes a root render.yaml for
+# its own multi-service config and refuses to build.
 # Render blueprint for the HireUS API.
 #
 # Render is used for the server rather than a serverless host because a client

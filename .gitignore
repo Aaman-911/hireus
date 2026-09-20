@@ -8,3 +8,6 @@ client/README.md
 
 # local editor/agent scratch
 .claude/
+.vercel
+.env*
+.vercel
