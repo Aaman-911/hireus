@@ -4,7 +4,33 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>client</title>
+    <meta name="color-scheme" content="light dark" />
+
+    <title>HireUS — AI mock interviewer</title>
+    <meta
+      name="description"
+      content="Practise a tailored mock interview, get a scored report on how you delivered it, then find live openings and real hiring contacts in your field."
+    />
+
+    <meta property="og:title" content="HireUS — AI mock interviewer" />
+    <meta
+      property="og:description"
+      content="Adaptive interview practice, a scored report, live job listings and real hiring contacts."
+    />
+    <meta property="og:type" content="website" />
+
+    <script>
+      // Apply the saved theme before first paint so the page never flashes light.
+      (function () {
+        try {
+          var saved = localStorage.getItem('hireus:theme');
+          var dark =
+            saved === 'dark' ||
+            (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches);
+          if (dark) document.documentElement.classList.add('dark');
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

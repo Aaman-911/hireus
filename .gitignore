@@ -3,7 +3,8 @@ dist/
 .env
 *.log
 .DS_Store
-# scratch helper for listing available Gemini models
-server/test_models.js
 # Vite template boilerplate; the project README is at the root
 client/README.md
+
+# local editor/agent scratch
+.claude/

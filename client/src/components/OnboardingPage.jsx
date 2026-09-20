@@ -1,38 +1,112 @@
-import { useState, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Mic, MicOff, CheckCircle, ArrowRight, ArrowLeft } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { speechSupported } from '../lib/speech';
+import { saveProfile, loadProfile, clearInterview } from '../lib/session';
+import { useToast } from '../lib/context';
+
+const STEPS = [
+  { id: 1, eyebrow: 'Step one', title: 'Who is answering.', sub: 'So the interviewer can use your name.' },
+  { id: 2, eyebrow: 'Step two', title: 'What you are after.', sub: 'This shapes every question you get.' },
+  { id: 3, eyebrow: 'Step three', title: 'How it should run.', sub: 'Format, length and difficulty.' },
+  { id: 4, eyebrow: 'Step four', title: 'Speak or type.', sub: 'Optional — typing works just as well.' },
+];
+
+function Field({ label, hint, error, children }) {
+  return (
+    <label className="block">
+      <span className="mb-2 flex items-baseline justify-between gap-4">
+        <span className="t-reduced font-semibold text-ink">{label}</span>
+        {hint && <span className="t-foot">{hint}</span>}
+      </span>
+      {children}
+      {error && <span className="t-foot mt-2 block text-burgundy">{error}</span>}
+    </label>
+  );
+}
+
+function Choice({ options, value, onChange, columns = 3 }) {
+  return (
+    <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${columns}, minmax(0,1fr))` }}>
+      {options.map(([val, label, sub]) => (
+        <button
+          key={val}
+          type="button"
+          onClick={() => onChange(val)}
+          className={`rounded-[var(--radius-media)] border px-4 py-3.5 text-left transition-[border-color,background-color] duration-[.32s] ${
+            value === val
+              ? 'border-accent bg-[var(--accent-wash)]'
+              : 'border-rule-strong bg-ground hover:border-ink-mute'
+          }`}
+        >
+          <span className="block text-[15px] font-medium tracking-[-.014em] text-ink">{label}</span>
+          {sub && <span className="t-foot mt-0.5 block">{sub}</span>}
+        </button>
+      ))}
+    </div>
+  );
+}
 
 export default function OnboardingPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { toast } = useToast();
+
+  const prefill = location.state?.prefill;
+  const saved = loadProfile();
+
   const [step, setStep] = useState(1);
-  const [formData, setFormData] = useState({
-    name: '',
-    age: '',
-    targetRole: '',
-    experience: '',
-    industry: '',
-    englishProficiency: 'Intermediate',
-    interviewType: 'Behavioral',
-    voiceSampleChecked: false
-  });
-  
+  const [touched, setTouched] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const recognitionRef = useRef(null);
 
-  const handleNext = () => setStep(s => Math.min(s + 1, 4));
-  const handlePrev = () => setStep(s => Math.max(s - 1, 1));
-  
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+  const [formData, setFormData] = useState({
+    name: prefill?.name || saved?.name || '',
+    age: saved?.age || '',
+    targetRole: prefill?.targetRole || saved?.targetRole || '',
+    experience: prefill?.experience ?? saved?.experience ?? '',
+    industry: prefill?.industry || saved?.industry || '',
+    englishProficiency: saved?.englishProficiency || 'Intermediate',
+    interviewType: saved?.interviewType || 'Behavioral',
+    questionCount: saved?.questionCount || 5,
+    voiceSampleChecked: false,
+  });
+
+  useEffect(() => {
+    if (prefill) {
+      toast({
+        title: 'Filled in from your resume',
+        description: 'Check it over, then start.',
+        variant: 'success',
+      });
+    }
+    return () => recognitionRef.current?.stop();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const update = (patch) => setFormData((f) => ({ ...f, ...patch }));
+  const handleChange = (e) => update({ [e.target.name]: e.target.value });
+
+  const roleError = touched && !formData.targetRole.trim() ? 'A target role is required.' : null;
+
+  const goNext = () => {
+    if (step === 2 && !formData.targetRole.trim()) {
+      setTouched(true);
+      return;
+    }
+    setTouched(false);
+    setStep((s) => Math.min(s + 1, 4));
   };
 
   const handleVoiceTest = () => {
-    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-      alert("Your browser doesn't support speech recognition.");
-      setFormData({ ...formData, voiceSampleChecked: true }); // bypass for unsupported browsers
+    if (!speechSupported()) {
+      update({ voiceSampleChecked: true });
+      toast({
+        title: 'No speech recognition here',
+        description: 'This browser cannot transcribe. You can still type your answers.',
+        variant: 'info',
+      });
       return;
     }
-    
     if (isRecording) {
       recognitionRef.current?.stop();
       setIsRecording(false);
@@ -40,142 +114,203 @@ export default function OnboardingPage() {
     }
 
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    recognitionRef.current = new SpeechRecognition();
-    recognitionRef.current.continuous = false;
-    recognitionRef.current.interimResults = false;
-
-    recognitionRef.current.onstart = () => setIsRecording(true);
-    recognitionRef.current.onresult = () => {
-        setFormData({ ...formData, voiceSampleChecked: true });
-        setIsRecording(false);
+    const recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.onstart = () => setIsRecording(true);
+    recognition.onresult = () => {
+      update({ voiceSampleChecked: true });
+      setIsRecording(false);
+      toast({ title: 'Microphone works', variant: 'success', duration: 3000 });
     };
-    recognitionRef.current.onerror = () => setIsRecording(false);
-    recognitionRef.current.onend = () => setIsRecording(false);
-
-    recognitionRef.current.start();
+    recognition.onerror = (event) => {
+      setIsRecording(false);
+      toast({
+        title: 'Microphone check failed',
+        description:
+          event.error === 'not-allowed'
+            ? 'Permission denied. Allow the microphone, or type instead.'
+            : `Speech recognition error: ${event.error}`,
+        variant: 'error',
+      });
+    };
+    recognition.onend = () => setIsRecording(false);
+    recognitionRef.current = recognition;
+    recognition.start();
   };
 
-  const submitOnboarding = () => {
-      // In a real app we'd save this to global state or context. 
-      // For now, we will pass it strictly to the interview page via location state.
-      navigate('/interview', { state: { profile: formData } });
+  const submit = () => {
+    if (!formData.targetRole.trim()) {
+      setTouched(true);
+      setStep(2);
+      return;
+    }
+    clearInterview();
+    saveProfile(formData);
+    navigate('/interview', { state: { profile: formData } });
   };
+
+  const active = STEPS[step - 1];
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[80vh] px-4 animate-in fade-in zoom-in-95 duration-500">
-      
-      <div className="max-w-2xl w-full glass-card rounded-[2rem] p-10 md:p-14 shadow-2xl relative overflow-hidden">
-        {/* Progress Bar */}
-        <div className="absolute top-0 left-0 w-full h-1.5 bg-gray-100">
-            <div 
-                className="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-500"
-                style={{ width: `${(step / 4) * 100}%` }}
-            ></div>
-        </div>
+    <div className="mx-auto max-w-[46rem] pb-16">
+      {/* Progress: four rules, filled left to right. */}
+      <div className="mb-10 flex gap-2">
+        {STEPS.map((s) => (
+          <span
+            key={s.id}
+            className="h-px flex-1 transition-colors duration-[.32s]"
+            style={{ background: s.id <= step ? 'var(--accent)' : 'var(--rule)' }}
+          />
+        ))}
+      </div>
 
-        <div className="mb-10 text-center">
-            <h2 className="text-3xl font-extrabold text-gray-900 mb-2 tracking-tight">
-                {step === 1 && "Let's Get Started"}
-                {step === 2 && "Your Career Goals"}
-                {step === 3 && "Interview Preferences"}
-                {step === 4 && "Voice Capabilities Check"}
-            </h2>
-            <p className="text-gray-500 font-medium">Step {step} of 4</p>
-        </div>
+      <div key={step} className="rise">
+        <p className="eyebrow">{active.eyebrow}</p>
+        <h1 className="t-lg mt-4">{active.title}</h1>
+        <p className="t-body mt-3 text-ink-soft">{active.sub}</p>
 
-        <div className="space-y-6">
-            {step === 1 && (
-                <div className="space-y-5 animate-in slide-in-from-right-8 duration-300">
-                    <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-2">Full Name</label>
-                        <input name="name" value={formData.name} onChange={handleChange} className="w-full p-4 rounded-xl border border-gray-200 bg-white/50 focus:bg-white focus:ring-2 focus:ring-purple-400 outline-none transition-all shadow-sm" placeholder="John Doe" />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-2">Age (Optional)</label>
-                        <input name="age" type="number" value={formData.age} onChange={handleChange} className="w-full p-4 rounded-xl border border-gray-200 bg-white/50 focus:bg-white focus:ring-2 focus:ring-purple-400 outline-none transition-all shadow-sm" placeholder="25" />
-                    </div>
-                </div>
-            )}
+        <div className="mt-10 space-y-7">
+          {step === 1 && (
+            <>
+              <Field label="Full name" hint="optional">
+                <input
+                  name="name" value={formData.name} onChange={handleChange}
+                  className="field" placeholder="Aman Dixit" autoComplete="name"
+                />
+              </Field>
+              <Field label="Age" hint="optional">
+                <input
+                  name="age" type="number" min="14" max="99"
+                  value={formData.age} onChange={handleChange}
+                  className="field" placeholder="21"
+                />
+              </Field>
+            </>
+          )}
 
-            {step === 2 && (
-                <div className="space-y-5 animate-in slide-in-from-right-8 duration-300">
-                    <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-2">Target Role</label>
-                        <input name="targetRole" value={formData.targetRole} onChange={handleChange} className="w-full p-4 rounded-xl border border-gray-200 bg-white/50 focus:bg-white focus:ring-2 focus:ring-purple-400 outline-none transition-all shadow-sm" placeholder="Frontend Developer, Product Manager..." />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-2">Industry</label>
-                        <input name="industry" value={formData.industry} onChange={handleChange} className="w-full p-4 rounded-xl border border-gray-200 bg-white/50 focus:bg-white focus:ring-2 focus:ring-purple-400 outline-none transition-all shadow-sm" placeholder="Tech, Finance, Healthcare..." />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-2">Years of Experience</label>
-                        <input name="experience" type="number" value={formData.experience} onChange={handleChange} className="w-full p-4 rounded-xl border border-gray-200 bg-white/50 focus:bg-white focus:ring-2 focus:ring-purple-400 outline-none transition-all shadow-sm" placeholder="e.g. 3" />
-                    </div>
-                </div>
-            )}
+          {step === 2 && (
+            <>
+              <Field label="Target role" hint="required" error={roleError}>
+                <input
+                  name="targetRole" value={formData.targetRole} onChange={handleChange}
+                  onBlur={() => setTouched(true)} aria-invalid={Boolean(roleError)}
+                  className="field" placeholder="Frontend Developer"
+                />
+              </Field>
+              <Field label="Industry" hint="optional">
+                <input
+                  name="industry" value={formData.industry} onChange={handleChange}
+                  className="field" placeholder="Tech, Finance, Healthcare"
+                />
+              </Field>
+              <Field label="Years of experience">
+                <input
+                  name="experience" type="number" min="0" max="50"
+                  value={formData.experience} onChange={handleChange}
+                  className="field" placeholder="0 if you are a fresher"
+                />
+              </Field>
+            </>
+          )}
 
-            {step === 3 && (
-                <div className="space-y-5 animate-in slide-in-from-right-8 duration-300">
-                    <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-2">English Proficiency</label>
-                        <select name="englishProficiency" value={formData.englishProficiency} onChange={handleChange} className="w-full p-4 rounded-xl border border-gray-200 bg-white/50 focus:bg-white focus:ring-2 focus:ring-purple-400 outline-none transition-all shadow-sm">
-                            <option value="Basic">Basic</option>
-                            <option value="Intermediate">Intermediate</option>
-                            <option value="Fluent">Fluent / Native</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-2">Interview Type</label>
-                        <select name="interviewType" value={formData.interviewType} onChange={handleChange} className="w-full p-4 rounded-xl border border-gray-200 bg-white/50 focus:bg-white focus:ring-2 focus:ring-purple-400 outline-none transition-all shadow-sm">
-                            <option value="Behavioral">Behavioral (Soft Skills)</option>
-                            <option value="Technical">Technical</option>
-                            <option value="HR">HR Screen</option>
-                        </select>
-                    </div>
-                </div>
-            )}
-
-            {step === 4 && (
-                <div className="text-center space-y-8 animate-in slide-in-from-right-8 duration-300 py-6">
-                    <p className="text-gray-600 font-medium text-lg leading-relaxed">
-                        HireUS works best when evaluating your actual speaking style. Let's do a quick microphone verify.
-                    </p>
-                    
-                    <button 
-                        onClick={handleVoiceTest}
-                        className={`inline-flex items-center gap-3 px-8 py-4 rounded-full font-bold text-white transition-all shadow-xl ${isRecording ? 'bg-red-500 animate-pulse scale-105' : formData.voiceSampleChecked ? 'bg-emerald-500' : 'bg-slate-900 hover:scale-105 hover:bg-black'}`}
-                    >
-                        {isRecording ? <Mic className="w-6 h-6" /> : formData.voiceSampleChecked ? <CheckCircle className="w-6 h-6" /> : <MicOff className="w-6 h-6" />}
-                        {isRecording ? "Listening... say something" : formData.voiceSampleChecked ? "Mic Verified!" : "Test Microphone"}
-                    </button>
-                    {!formData.voiceSampleChecked && !isRecording && (
-                         <p className="text-sm text-gray-400 mt-2">Click and say "Hello HireUS"</p>
-                    )}
-                </div>
-            )}
-        </div>
-
-        {/* Navigation Buttons */}
-        <div className="flex items-center justify-between mt-12 pt-6 border-t border-gray-100">
-            {step > 1 ? (
-                <button onClick={handlePrev} className="inline-flex items-center gap-2 text-gray-600 font-bold hover:text-black transition-colors px-4 py-2">
-                    <ArrowLeft className="w-5 h-5" /> Back
-                </button>
-            ) : <div></div>}
-
-            {step < 4 ? (
-                <button onClick={handleNext} className="inline-flex items-center gap-2 px-8 py-3.5 bg-gradient-to-r from-purple-600 to-pink-500 text-white font-bold rounded-xl shadow-lg hover:shadow-purple-500/30 hover:-translate-y-0.5 transition-all">
-                    Next Step <ArrowRight className="w-5 h-5" />
-                </button>
-            ) : (
-                <button 
-                    onClick={submitOnboarding} 
-                    disabled={!formData.voiceSampleChecked && !formData.targetRole}
-                    className="inline-flex items-center gap-2 px-8 py-3.5 bg-gradient-to-r from-purple-600 to-pink-500 text-white font-bold rounded-xl shadow-lg hover:shadow-purple-500/30 hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          {step === 3 && (
+            <>
+              <Field label="Interview type">
+                <Choice
+                  options={[
+                    ['Behavioral', 'Behavioural', 'Soft skills'],
+                    ['Technical', 'Technical', 'Role depth'],
+                    ['HR', 'HR screen', 'First call'],
+                  ]}
+                  value={formData.interviewType}
+                  onChange={(v) => update({ interviewType: v })}
+                />
+              </Field>
+              <Field label="Questions">
+                <Choice
+                  options={[
+                    [3, 'Three', 'About 5 min'],
+                    [5, 'Five', 'About 10 min'],
+                    [8, 'Eight', 'About 18 min'],
+                  ]}
+                  value={formData.questionCount}
+                  onChange={(v) => update({ questionCount: v })}
+                />
+              </Field>
+              <Field label="English proficiency">
+                <select
+                  name="englishProficiency" value={formData.englishProficiency}
+                  onChange={handleChange} className="field"
                 >
-                    Start Interview
-                </button>
-            )}
+                  <option value="Basic">Basic</option>
+                  <option value="Intermediate">Intermediate</option>
+                  <option value="Fluent">Fluent / Native</option>
+                </select>
+              </Field>
+            </>
+          )}
+
+          {step === 4 && (
+            <div className="py-2">
+              <p className="t-body max-w-[46ch] text-ink-soft">
+                Speaking lets HireUS measure your pace and filler words. Skip it and type —
+                the interview runs either way.
+              </p>
+
+              <button
+                onClick={handleVoiceTest}
+                className={`mt-9 grid h-24 w-24 place-items-center rounded-full transition-[background-color,transform] duration-[.32s] ${
+                  isRecording
+                    ? 'scale-105 bg-burgundy text-ground'
+                    : formData.voiceSampleChecked
+                      ? 'bg-accent text-white'
+                      : 'border border-rule-strong bg-ground text-ink hover:bg-ground-alt'
+                }`}
+                aria-label="Test microphone"
+              >
+                {formData.voiceSampleChecked && !isRecording ? (
+                  <svg viewBox="0 0 24 24" className="h-8 w-8" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M4 12.5l5 5L20 7" />
+                  </svg>
+                ) : (
+                  <svg viewBox="0 0 24 24" className="h-8 w-8" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                    <rect x="9" y="3" width="6" height="11" rx="3" />
+                    <path d="M5 11a7 7 0 0 0 14 0M12 18v3" />
+                  </svg>
+                )}
+              </button>
+
+              <p className="t-reduced mt-5 text-ink-soft" role="status" aria-live="polite">
+                {isRecording
+                  ? 'Listening — say anything'
+                  : formData.voiceSampleChecked
+                    ? 'Microphone verified'
+                    : 'Tap to test your microphone'}
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="ruled-top mt-12 flex items-center justify-between gap-4 pt-7">
+        {step > 1 ? (
+          <button onClick={() => setStep((s) => s - 1)} className="btn btn-quiet">
+            Back
+          </button>
+        ) : (
+          <span />
+        )}
+
+        <div className="flex items-center gap-4">
+          {step === 4 && !formData.voiceSampleChecked && (
+            <button onClick={submit} className="btn-text">
+              Skip and type
+            </button>
+          )}
+          <button onClick={step < 4 ? goNext : submit} className="btn btn-fill">
+            {step < 4 ? 'Continue' : 'Start interview'}
+          </button>
         </div>
       </div>
     </div>

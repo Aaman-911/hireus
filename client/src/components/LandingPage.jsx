@@ -1,112 +1,204 @@
 import { Link } from 'react-router-dom';
-import { Bot, Mic, BarChart3, Zap } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { useReveal } from '../lib/useReveal';
+import ProductShot from './ui/ProductShot';
+import {
+  InterviewFigure, ReportFigure, FollowThroughFigure,
+} from './ui/ChapterFigure';
+
+/* Three chapters, not nine. Each names one thing this does that a mock
+   interviewer alone does not. Eyebrow → headline → one paragraph → link. */
+const CHAPTERS = [
+  {
+    n: '01',
+    eyebrow: 'The interview',
+    headline: 'It listens back.',
+    body: 'Questions are built from your role and your years, and each one follows from what you just said. Claim you improved something and it will ask by how much. Pace and filler words are counted while you speak.',
+    to: '/onboarding',
+    cta: 'Start an interview',
+    Figure: InterviewFigure,
+  },
+  {
+    n: '02',
+    eyebrow: 'The report',
+    headline: 'Your answer, rewritten.',
+    body: 'Four scored dimensions, and for every question the thing that actually helps — your own answer handed back stronger, keeping your example, with brackets where a number should go.',
+    to: '/onboarding',
+    cta: 'See how it scores',
+    Figure: ReportFigure,
+  },
+  {
+    n: '03',
+    eyebrow: 'The follow-through',
+    headline: 'Someone to send it to.',
+    body: 'Five job boards in one search, stale and untranslated listings dropped, ranked against your profile. Then the addresses employers published this month so that candidates would write to them.',
+    to: '/jobs',
+    cta: 'Browse openings',
+    Figure: FollowThroughFigure,
+  },
+];
+
+const STATS = [
+  ['5', 'job boards, one search'],
+  ['20%', 'of hiring posts carry a direct address'],
+  ['0', 'accounts, sign-ups or sends'],
+];
 
 export default function LandingPage() {
-  const features = [
-    {
-      icon: <Bot className="w-6 h-6 text-purple-600" />,
-      title: "AI Sentiment Analysis",
-      description: "Get real-time feedback on the emotional tone of your answers mapping confidence and clarity."
-    },
-    {
-      icon: <Mic className="w-6 h-6 text-pink-500" />,
-      title: "Filler Word Detection",
-      description: "Automatically identify 'ums', 'ahs', and 'likes' to help you speak with absolute precision."
-    },
-    {
-      icon: <Zap className="w-6 h-6 text-orange-500" />,
-      title: "Keyword Matching",
-      description: "Ensure your responses hit the critical industry-specific keywords recruiters are looking for."
-    },
-    {
-      icon: <BarChart3 className="w-6 h-6 text-blue-500" />,
-      title: "Performance Scoring",
-      description: "Receive a comprehensive metric-driven score after every session to track your improvement."
-    }
-  ];
+  const chaptersRef = useReveal();
+  const statsRef = useReveal({ stagger: 0.12 });
+  const [pillVisible, setPillVisible] = useState(false);
+
+  // The pill stays out of the way until you have left the hero.
+  useEffect(() => {
+    const onScroll = () => setPillVisible(window.scrollY > window.innerHeight * 0.6);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
   return (
     <>
-      <style>
-        {`
-          @keyframes calmFadeIn {
-            0% { opacity: 0; transform: translateY(15px); }
-            100% { opacity: 1; transform: translateY(0); }
-          }
-          .animate-calm {
-            animation: calmFadeIn 1.2s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
-            opacity: 0;
-          }
-        `}
-      </style>
-      <div 
-        className="absolute top-0 left-0 w-full h-screen z-50 overflow-hidden bg-cover bg-center bg-no-repeat bg-[#f0ecfc]"
-        style={{ backgroundImage: "url('/hero-bg.jpg')" }}
-      >
-        {/* Subtle white glass overlay for readability & premium feel */}
-        <div className="absolute inset-0 bg-white/10 backdrop-blur-sm"></div>
+      {/* ═══════════════════ STAGE — the marquee ═══════════════════ */}
+      <section className="stage relative overflow-hidden">
+        <div className="wrap-wide flex min-h-[clamp(620px,100svh,900px)] flex-col justify-center pb-[clamp(56px,7vw,88px)] pt-[clamp(88px,12vw,140px)]">
+          <div className="mx-auto max-w-[62rem] text-center">
+            <p className="eyebrow rise">Mock interviewer</p>
 
-        <div className="relative z-10 w-full h-full flex flex-col items-center justify-center animate-calm">
-          
-          <h1 
-            className="text-7xl md:text-[8rem] tracking-tight text-gray-900/90 mb-10 select-none drop-shadow-sm" 
-            style={{ fontWeight: 400, letterSpacing: '-0.03em' }}
-          >
-            HireUS
-          </h1>
-          
-          <Link 
-            to="/onboarding"
-            className="px-10 py-5 text-lg font-medium text-white bg-slate-900/95 rounded-[2rem] shadow-2xl hover:scale-[1.03] hover:shadow-3xl hover:bg-black transition-all duration-300 ease-out select-none border border-white/10 ring-1 ring-white/5"
-          >
-            Start Interview
-          </Link>
+            <h1 className="t-marquee rise d1 mx-auto mt-6 max-w-[13ch]">
+              Practice out loud.
+            </h1>
+
+            <p className="t-intro on-stage-soft rise d2 mx-auto mt-7 max-w-[44ch]">
+              HireUS interviews you for the role you want, scores how you actually
+              delivered it, then finds the people hiring.
+            </p>
+
+            <div className="rise d3 mt-10 flex flex-wrap items-center justify-center gap-x-7 gap-y-4">
+              <Link to="/onboarding" className="btn btn-fill btn-on-stage">
+                Start an interview
+              </Link>
+              <Link to="/jobs" className="btn-text btn-text-on-stage">
+                Just browse jobs
+              </Link>
+            </div>
+
+            <p className="mono on-stage-mute rise d4 mt-7 text-[12px]">
+              No account · Speech works best in Chrome
+            </p>
+          </div>
+
+          {/* The product, lit against nothing. */}
+          <div className="rise d5 mx-auto mt-[clamp(48px,6vw,80px)] w-full max-w-[72rem]">
+            <ProductShot />
+          </div>
         </div>
-      </div>
+      </section>
 
-      {/* spacer to push content below the absolute Hero */}
-      <div className="relative w-full z-40" style={{ marginTop: '100vh' }}>
-        <div className="py-24 max-w-4xl mx-auto flex flex-col items-center animate-calm" style={{animationDelay: '0.4s'}}>
-          <h2 className="text-3xl md:text-5xl tracking-tight text-gray-900/90 mb-16 select-none drop-shadow-sm text-center" style={{ fontWeight: 400, letterSpacing: '-0.02em' }}>
-            Advanced Coaching Features
-          </h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 w-full">
-            {features.map((feature, index) => (
-              <div 
-                key={index} 
-                className="group relative p-8 rounded-3xl bg-white/40 backdrop-blur-xl border border-white/40 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] hover:-translate-y-1 transition-all duration-500 ease-out"
-              >
-                {/* Soft gradient hover glow inside card */}
-                <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-white/60 to-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-
-                <div className="relative z-10 flex flex-col items-start">
-                  <div className="bg-white/60 w-14 h-14 rounded-2xl flex items-center justify-center mb-6 shadow-sm border border-white/50 backdrop-blur-md">
-                    {feature.icon}
-                  </div>
-                  <h3 className="text-2xl tracking-tight text-gray-900/90 mb-3" style={{ fontWeight: 500 }}>
-                    {feature.title}
-                  </h3>
-                  <p className="text-gray-600/90 text-lg leading-relaxed font-light">
-                    {feature.description}
-                  </p>
-                </div>
+      {/* ═════════ RAISED — one step up, so the seam is visible ═════════ */}
+      <section className="stage-raised">
+        <div className="wrap band">
+          <div ref={statsRef} className="grid gap-x-16 gap-y-12 sm:grid-cols-3">
+            {STATS.map(([figure, label]) => (
+              <div key={label}>
+                <p className="mono text-[clamp(40px,5vw,60px)] font-semibold leading-none tracking-[-.028em] text-[#f5f5f7]">
+                  {figure}
+                </p>
+                <p className="on-stage-mute mt-4 max-w-[22ch] text-[14px] leading-relaxed">
+                  {label}
+                </p>
               </div>
             ))}
           </div>
         </div>
+      </section>
+
+      {/* ═══ THE CUT — the film is over, the explaining starts here ═══ */}
+      {/* Marks where the dark bands stop, so the nav knows to stop inverting. */}
+      <div data-stage-end aria-hidden="true" />
+
+      <div ref={chaptersRef} className="bg-ground">
+        {CHAPTERS.map(({ Figure, ...c }, i) => (
+          <section key={c.n} className="ruled-bottom band">
+            <div className="wrap grid items-center gap-x-16 gap-y-12 lg:grid-cols-2">
+              {/* Alternating sides, so three chapters do not read as a list. */}
+              <div className={i % 2 === 1 ? 'lg:order-2' : ''}>
+                <div className="grid gap-x-10 md:grid-cols-[4rem_1fr]">
+                  <span className="mono t-foot hidden pt-2 md:block">{c.n}</span>
+                  <div>
+                    <p className="eyebrow">{c.eyebrow}</p>
+                    <h2 className="t-lg mt-5">{c.headline}</h2>
+                    <p className="t-body mt-6 max-w-[42ch] text-ink-soft">{c.body}</p>
+                    <Link to={c.to} className="btn-text mt-4">
+                      {c.cta}
+                    </Link>
+                  </div>
+                </div>
+              </div>
+
+              <div className={i % 2 === 1 ? 'lg:order-1' : ''} aria-hidden="true">
+                <Figure />
+              </div>
+            </div>
+          </section>
+        ))}
+
+        {/* The honest note about contact data */}
+        <section className="ruled-bottom band">
+          <div className="wrap grid gap-x-12 gap-y-6 md:grid-cols-[4rem_1fr]">
+            <span className="mono t-foot pt-2">04</span>
+            <div className="max-w-[46rem]">
+              <p className="eyebrow">Contact data</p>
+              <h2 className="t-lg mt-5">Published, not scraped.</h2>
+              <p className="t-body mt-6 max-w-[56ch] text-ink-soft">
+                Every address here was put somewhere public so that it would be used —
+                an employer posting in a hiring thread, a developer filling in their own
+                profile. Nothing is guessed from a name pattern, bought from a broker, or
+                taken from LinkedIn. It is a shorter list than the paid tools return, and
+                you can write to all of it.
+              </p>
+              <Link to="/network" className="btn-text mt-4">
+                See the sources
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        {/* Close */}
+        <section className="band">
+          <div className="wrap">
+            <h2 className="t-xl max-w-[15ch]">Find out how you sound.</h2>
+            <p className="t-intro mt-6 max-w-[40ch]">
+              Five questions. Ten minutes. A report you can act on.
+            </p>
+            <Link to="/onboarding" className="btn btn-fill mt-9">
+              Start an interview
+            </Link>
+          </div>
+        </section>
+
+        <footer className="wrap ruled-top band-tight">
+          <p className="t-foot">Aman Dixit · CSE 3rd Year · MITS Gwalior</p>
+        </footer>
       </div>
 
-      {/* Developer Credits Footer */}
-      <footer 
-        className="w-full py-8 mt-16 flex flex-col items-center justify-center text-gray-500/60 font-medium text-sm animate-calm space-y-1 select-none"
-        style={{ animationDelay: '0.6s' }}
+      {/* The commercial spine. Everything above is allowed to be a film
+          because this never leaves. */}
+      <div
+        className={`sticky-pill no-print ${pillVisible ? '' : 'sticky-pill-hidden'}`}
+        aria-hidden={!pillVisible}
       >
-        <div className="flex flex-col md:flex-row items-center gap-1 md:gap-4">
-          <p>Aman Dixit <span className="hidden md:inline text-gray-400">—</span><span className="md:hidden"><br/></span> CSE 3rd Year</p>
-        </div>
-        <p className="pt-1 text-gray-400/50 text-xs tracking-wider uppercase">MITS Gwalior</p>
-      </footer>
+        <span className="hidden sm:inline">Free · 5 questions · about 10 minutes</span>
+        <span className="sm:hidden">Free · 10 minutes</span>
+        <Link
+          to="/onboarding"
+          tabIndex={pillVisible ? 0 : -1}
+          className="rounded-[var(--radius-compact)] px-4 py-2 text-[14px] text-white transition-[background-color] duration-[.32s]"
+          style={{ background: 'var(--color-accent)' }}
+        >
+          Start
+        </Link>
+      </div>
     </>
   );
 }

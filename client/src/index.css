@@ -1,45 +1,555 @@
 @import "tailwindcss";
+@import "@fontsource-variable/public-sans";
+@import "@fontsource-variable/jetbrains-mono";
 
-@theme {
-  --color-primary-start: #ff7e5f;
-  --color-primary-end: #feb47b;
-  --color-secondary-start: #8e2de2;
-  --color-secondary-end: #4a00e0;
-}
+/* ============================================================
+   THE CUPERTINO SYSTEM, POINTED AT HIREUS
+
+   Nine colours, one type family, four radii, two curves.
+   Light is the base layer; dark redefines values only.
+
+   The accent is green, not Apple's #0071e3 — the source system
+   is explicit that the blue does not survive a port. The *role*
+   survives: one saturated hue, reserved for the primary action.
+   Green also carries the meaning here (offer, hired, go).
+   ============================================================ */
 
 :root {
-  font-family: 'Inter', system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
+  --ground:        #ffffff;
+  --ground-alt:    #f5f5f7;
+  --ground-sunk:   #ebebef;
 
-  color-scheme: light dark;
-  color: #1f2937;
-  background-color: #f9fafb;
+  --ink:           #1d1d1f;
+  --ink-soft:      #4a4a4f;
+  --ink-mute:      #86868b;
 
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  --rule:          rgba(0, 0, 0, 0.10);
+  --rule-strong:   rgba(0, 0, 0, 0.22);
+
+  --accent:        #00794f;              /* filled CTA, white text — 5.46:1 */
+  --accent-ink:    #046c46;              /* inline links on paper — 5.96:1 */
+  --accent-wash:   rgba(0, 121, 79, 0.07);
+
+  --burgundy:      #4d1821;              /* the one warm note; warnings only */
+
+  --code-bg:       #f2f2f5;
+  --code-ink:      #2a2a2e;
+
+  --shadow-card:   0 1px 2px rgba(0,0,0,.04), 0 8px 28px rgba(0,0,0,.06);
+
+  color-scheme: light;
 }
+
+:root.dark {
+  --ground:        #101012;
+  --ground-alt:    #17171a;
+  --ground-sunk:   #08080a;
+
+  --ink:           #f2f2f4;
+  --ink-soft:      #c2c2c8;
+  --ink-mute:      #8a8a92;
+
+  --rule:          rgba(255, 255, 255, 0.12);
+  --rule-strong:   rgba(255, 255, 255, 0.26);
+
+  --accent:        #00875f;
+  --accent-ink:    #3ddc97;              /* links on dark — 10.75:1 */
+  --accent-wash:   rgba(61, 220, 151, 0.10);
+
+  --burgundy:      #d98a95;
+
+  --code-bg:       #1c1c20;
+  --code-ink:      #dcdce2;
+
+  --shadow-card:   0 1px 2px rgba(0,0,0,.5), 0 10px 34px rgba(0,0,0,.42);
+
+  color-scheme: dark;
+}
+
+@theme {
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
+               "Public Sans Variable", "Public Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-mono: "JetBrains Mono Variable", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* The radius ladder. Anything interactive is a full pill; anything that
+     holds content is 28. There is no 4, 6 or 8px radius in this system. */
+  --radius-pill:  980px;
+  --radius-compact: 120px;
+  --radius-tile:  28px;
+  --radius-panel: 18px;
+  --radius-media: 12px;
+
+  /* Two curves. Transform starts at full speed and decelerates, so nothing
+     ever feels sluggish to begin; colour is symmetrical and slower, so hovers
+     feel soft while movement feels crisp. */
+  --ease-move:  cubic-bezier(0, 0, 0.5, 1);
+  --ease-tint:  cubic-bezier(0.4, 0, 0.6, 1);
+
+  --page-max: 1180px;
+}
+
+@theme inline {
+  --color-ground:      var(--ground);
+  --color-ground-alt:  var(--ground-alt);
+  --color-ground-sunk: var(--ground-sunk);
+  --color-ink:         var(--ink);
+  --color-ink-soft:    var(--ink-soft);
+  --color-ink-mute:    var(--ink-mute);
+  --color-rule:        var(--rule);
+  --color-rule-strong: var(--rule-strong);
+  --color-accent:      var(--accent);
+  --color-accent-ink:  var(--accent-ink);
+  --color-accent-wash: var(--accent-wash);
+  --color-burgundy:    var(--burgundy);
+}
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ============================================================
+   BASE
+   ============================================================ */
+
+* { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
 
 body {
   margin: 0;
   min-width: 320px;
-  min-height: 100vh;
-  /* Soft vibrant background */
-  background: 
-    radial-gradient(circle at top left, rgba(255, 126, 95, 0.15), transparent 50%),
-    radial-gradient(circle at bottom right, rgba(142, 45, 226, 0.15), transparent 50%);
-  background-color: #fafafa;
-  background-attachment: fixed;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 17px;
+  line-height: 1.55;
+  letter-spacing: -0.011em;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.32s var(--ease-tint), color 0.32s var(--ease-tint);
 }
 
+h1, h2, h3, h4 {
+  margin: 0;
+  font-weight: 600;
+  letter-spacing: -0.021em;
+  text-wrap: balance;
+  color: var(--ink);
+}
+
+p { margin: 0; text-wrap: pretty; }
+
+::selection { background: var(--accent); color: #fff; }
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+/* ============================================================
+   TYPE SCALE
+
+   The tracking rule is the part people miss: letter-spacing
+   crosses zero at roughly 24px. Below it tracking is negative,
+   between 24 and 32 it goes positive, and above that it swings
+   hard negative again. The sign changes matter more than the
+   numbers.
+   ============================================================ */
+
 @layer utilities {
-  .glass-card {
-    background: rgba(255, 255, 255, 0.65);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(255, 255, 255, 0.4);
-    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.05);
+  /* Marquee. The hero headline is meant to occupy roughly a third of
+     the viewport, so this runs to 96px rather than stopping at 76. */
+  .t-marquee {
+    font-size: clamp(44px, 8.4vw, 96px);
+    line-height: 1.02;
+    letter-spacing: -0.032em;
+    font-weight: 600;
   }
+  .t-display {
+    font-size: clamp(40px, 7.2vw, 76px);
+    line-height: 1.03;
+    letter-spacing: -0.028em;
+    font-weight: 600;
+  }
+  .t-xl {
+    font-size: clamp(30px, 5vw, 56px);
+    line-height: 1.06;
+    letter-spacing: -0.018em;
+    font-weight: 600;
+  }
+  .t-lg {
+    font-size: clamp(26px, 3.6vw, 40px);
+    line-height: 1.12;
+    letter-spacing: -0.024em;
+    font-weight: 600;
+  }
+  .t-md {
+    font-size: 28px;
+    line-height: 1.14;
+    letter-spacing: 0.007em;   /* positive — above the crossover */
+    font-weight: 600;
+  }
+  .t-sm {
+    font-size: 21px;
+    line-height: 1.25;
+    letter-spacing: 0.011em;   /* positive */
+    font-weight: 600;
+  }
+  .t-intro {
+    font-size: clamp(19px, 2.1vw, 23px);
+    line-height: 1.45;
+    letter-spacing: -0.014em;
+    color: var(--ink-soft);
+  }
+  .t-body   { font-size: 17px;   line-height: 1.55; letter-spacing: -0.022em; }
+  .t-reduced{ font-size: 14px;   line-height: 1.45; letter-spacing: -0.016em; }
+  .t-foot   { font-size: 12px;   line-height: 1.35; letter-spacing: -0.01em; color: var(--ink-mute); }
+
+  /* Eyebrow: plain category label, never clever. */
+  .eyebrow {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+  }
+
+  .mono { font-family: var(--font-mono); letter-spacing: 0; font-variant-numeric: tabular-nums; }
+
+  /* ============================================================
+     SHELL & RHYTHM — air is the luxury signal
+     ============================================================ */
+  .wrap {
+    max-width: var(--page-max);
+    margin-inline: auto;
+    padding-inline: clamp(20px, 5vw, 64px);
+  }
+  /* A second, wider track so imagery breathes past the text column. */
+  .wrap-wide {
+    max-width: 1680px;
+    margin-inline: auto;
+    padding-inline: clamp(20px, 5vw, 64px);
+  }
+  .band { padding-block: clamp(64px, 9vw, 120px); }
+  .band-tight { padding-block: clamp(40px, 5vw, 72px); }
+  .ruled-top { border-top: 1px solid var(--rule); }
+  .ruled-bottom { border-bottom: 1px solid var(--rule); }
+
+  /* ============================================================
+     STAGE BANDS
+
+     The page is not "dark mode". It is a sequence of theatrical
+     bands: pure black where the product is shown against nothing,
+     #1d1d1f between them so two dark sections do not merge, then
+     a hard cut to paper the moment the page starts explaining
+     itself. That cut is the structural signal.
+
+     These are fixed colours on purpose — they do not invert with
+     the theme, exactly like the specimen plates in the source
+     system.
+     ============================================================ */
+  .stage {
+    background: #000;
+    color: #f5f5f7;
+  }
+  .stage-raised {
+    background: #1d1d1f;
+    color: #f5f5f7;
+  }
+  .stage :where(h1, h2, h3, h4),
+  .stage-raised :where(h1, h2, h3, h4) { color: #f5f5f7; }
+
+  .stage .eyebrow,
+  .stage-raised .eyebrow { color: rgb(245 245 247 / 0.5); }
+
+  .on-stage-soft { color: rgb(245 245 247 / 0.72); }
+  .on-stage-mute { color: rgb(245 245 247 / 0.48); }
+  .rule-on-stage { border-color: rgb(255 255 255 / 0.14); }
+
+  /* A filled CTA on black is white; the accent would fight the set. */
+  .btn.btn-on-stage {
+    background: #f5f5f7;
+    color: #101012;
+  }
+  .btn.btn-on-stage:hover:not(:disabled) { background: #fff; }
+
+  .btn-text.btn-text-on-stage { color: #f5f5f7; }
+
+  /* The light-mode accent is far too dark to read on black, so anything
+     inside a stage band gets the bright variant regardless of theme. */
+  .stage, .stage-raised { --accent-ink: #3ddc97; }
+
+  /* ============================================================
+     THE STICKY PILL — the commercial spine. Everything else is
+     allowed to be a film because this never leaves.
+     ============================================================ */
+  .sticky-pill {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(0);
+    z-index: 60;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-height: 56px;
+    padding: 9px 10px 9px 22px;
+    border-radius: var(--radius-tile);
+    background: rgb(28 28 31 / 0.72);
+    backdrop-filter: blur(7px) saturate(1.4);
+    -webkit-backdrop-filter: blur(7px) saturate(1.4);
+    box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.10), 0 12px 40px rgb(0 0 0 / 0.30);
+    color: #f5f5f7;
+    font-size: 15px;
+    letter-spacing: -0.012em;
+    transition: transform 0.23s ease, opacity 0.23s ease;
+  }
+  .sticky-pill-hidden {
+    transform: translateX(-50%) translateY(140%);
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  /* ============================================================
+     PRODUCT SHOT — with no photography to fall back on, the
+     rendered interface is the only honest subject. Lit against
+     the stage rather than floated on it.
+     ============================================================ */
+  .shot {
+    position: relative;
+    border-radius: var(--radius-tile);
+    background: linear-gradient(180deg, #1c1c20 0%, #141417 100%);
+    box-shadow:
+      inset 0 0 0 1px rgb(255 255 255 / 0.08),
+      0 2px 8px rgb(0 0 0 / 0.5),
+      0 30px 80px -20px rgb(0 0 0 / 0.75);
+  }
+  /* The light the product is standing in. */
+  .shot-glow::before {
+    content: '';
+    position: absolute;
+    inset: -18% -8% -28%;
+    z-index: -1;
+    background: radial-gradient(60% 50% at 50% 42%, rgb(0 135 95 / 0.22), transparent 72%);
+    filter: blur(50px);
+    pointer-events: none;
+  }
+
+  /* ============================================================
+     COMPONENTS — a pill, a tile, or a piece of glass
+     ============================================================ */
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 44px;             /* the global minimum target */
+    padding: 11px 21px;
+    border-radius: var(--radius-pill);
+    border: 0;
+    font-size: 17px;
+    font-weight: 400;
+    letter-spacing: -0.014em;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background-color 0.32s var(--ease-tint),
+                border-color 0.32s var(--ease-tint),
+                color 0.32s var(--ease-tint),
+                opacity 0.32s var(--ease-tint);
+  }
+  .btn-fill {
+    background: var(--accent);
+    color: #fff;
+  }
+  .btn-fill:hover:not(:disabled) { background: color-mix(in srgb, var(--accent) 88%, #fff); }
+  .btn-fill:disabled { opacity: 0.38; cursor: not-allowed; }
+
+  .btn-quiet {
+    background: transparent;
+    color: var(--ink);
+    border: 1px solid var(--rule-strong);
+  }
+  .btn-quiet:hover:not(:disabled) { background: var(--ground-alt); }
+  .btn-quiet:disabled { opacity: 0.38; cursor: not-allowed; }
+
+  .btn-sm { min-height: 36px; padding: 7px 16px; font-size: 14px; letter-spacing: -0.016em; }
+
+  /* Text CTA: a chevron, never an underline. */
+  .btn-text {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    color: var(--accent-ink);
+    font-size: 17px;
+    letter-spacing: -0.014em;
+    background: none;
+    border: 0;
+    cursor: pointer;
+  }
+  .btn-text::after { content: "\203A"; margin-left: 5px; font-size: 1.25em; line-height: 0; }
+  .btn-text:hover { text-decoration: underline; }
+
+  /* Tile: 28px radius, hover is a ~1% scale — barely perceptible, which is the point. */
+  .tile {
+    background: var(--ground-alt);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius-tile);
+    transition: transform 0.3s var(--ease-move), background-color 0.344s ease;
+  }
+  .tile-hover:hover { transform: scale(1.012); }
+
+  .panel {
+    background: var(--ground);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius-panel);
+  }
+
+  .field {
+    width: 100%;
+    min-height: 44px;
+    padding: 11px 18px;
+    border-radius: var(--radius-pill);
+    border: 1px solid var(--rule-strong);
+    background: var(--ground);
+    color: var(--ink);
+    font-family: inherit;
+    font-size: 17px;
+    letter-spacing: -0.014em;
+    transition: border-color 0.32s var(--ease-tint), background-color 0.32s var(--ease-tint);
+  }
+  .field::placeholder { color: var(--ink-mute); }
+  .field:focus { outline: none; border-color: var(--accent); }
+  /* Multi-line inputs keep a tile radius — a pill would clip the text. */
+  textarea.field { border-radius: var(--radius-media); line-height: 1.55; }
+  select.field { appearance: none; cursor: pointer; }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: var(--radius-compact);
+    border: 1px solid var(--rule);
+    background: var(--ground-alt);
+    color: var(--ink-soft);
+    font-size: 13px;
+    letter-spacing: -0.01em;
+    cursor: pointer;
+    transition: border-color 0.32s var(--ease-tint), color 0.32s var(--ease-tint),
+                background-color 0.32s var(--ease-tint);
+  }
+  .chip:hover { border-color: var(--rule-strong); color: var(--ink); }
+  .chip-on {
+    background: var(--accent-wash);
+    border-color: var(--accent);
+    color: var(--accent-ink);
+  }
+
+  /* Glass — the sticky pill. The one place blur is allowed. */
+  .glass {
+    background: color-mix(in srgb, var(--ground) 78%, transparent);
+    backdrop-filter: blur(20px) saturate(1.6);
+    -webkit-backdrop-filter: blur(20px) saturate(1.6);
+  }
+
+  .hairline { border-bottom: 1px solid var(--rule); }
+
+  .warn {
+    border-left: 3px solid var(--burgundy);
+    padding-left: 18px;
+  }
+
+  /* ============================================================
+     MOTION — one entrance animation, used everywhere.
+
+     The asymmetry is deliberate: the element finishes *moving*
+     (0.7s) before it finishes *appearing* (0.9s), so it settles
+     into place and then resolves. Reversing the two makes the
+     same animation feel cheap.
+     ============================================================ */
+  .rise {
+    animation:
+      rise-move 0.7s var(--ease-move) both,
+      rise-fade 0.9s ease-out both;
+  }
+  .d1 { animation-delay: 0.15s, 0.15s; }
+  .d2 { animation-delay: 0.30s, 0.30s; }
+  .d3 { animation-delay: 0.45s, 0.45s; }
+  .d4 { animation-delay: 0.60s, 0.60s; }
+  .d5 { animation-delay: 0.75s, 0.75s; }
+
+  .skeleton {
+    background: var(--ground-sunk);
+    border-radius: var(--radius-compact);
+    animation: pulse-soft 1.7s ease-in-out infinite;
+  }
+
+  .spin { animation: spin 0.9s linear infinite; }
+
+  /* The one ambient motion on the page: the waveform in the product
+     shot, so the hero is alive without anything spinning or bouncing. */
+  .bar-live {
+    transform-origin: center;
+    animation: bar 1.6s ease-in-out infinite;
+  }
+
+  /* Draws a hairline in from the left as its section arrives. */
+  .rule-draw {
+    transform-origin: left;
+    animation: draw 0.9s var(--ease-move) both;
+  }
+}
+
+@keyframes rise-move {
+  from { transform: translateY(30px); }
+  to   { transform: none; }
+}
+@keyframes rise-fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.45; }
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes bar {
+  0%, 100% { transform: scaleY(0.35); }
+  50%      { transform: scaleY(1); }
+}
+@keyframes draw {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+
+/* Under reduced motion the translate collapses to zero and the fade remains.
+   Nothing is ever parked at opacity: 0 with no way back. */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .rise { animation: rise-fade 0.4s ease-out both; }
+  .tile-hover:hover { transform: none; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .rise { animation-duration: 0.4s !important; }
+}
+
+/* ============================================================
+   PRINT — the report leaves as a document, not a screenshot
+   ============================================================ */
+@media print {
+  .no-print { display: none !important; }
+  body { background: #fff; color: #000; font-size: 12pt; }
+  .tile, .panel {
+    box-shadow: none !important;
+    border: 1px solid #d2d2d7 !important;
+    break-inside: avoid;
+    background: #fff !important;
+  }
+  .band { padding-block: 24px; }
+  .rise { animation: none; opacity: 1; }
 }
