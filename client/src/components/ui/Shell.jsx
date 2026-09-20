@@ -23,31 +23,39 @@ function ThemeToggle({ onStage }) {
           : 'text-ink-mute hover:text-ink'
       }`}
     >
-      {/* A sun and a moon drawn as one mark, so the swap is a fill change
-          rather than two icons crossfading. */}
-      <svg viewBox="0 0 20 20" className="h-[18px] w-[18px]" fill="none" aria-hidden="true">
-        <circle
-          cx="10" cy="10" r={isDark ? 4.2 : 3.6}
-          fill="currentColor"
-          style={{ transition: 'r .32s cubic-bezier(.4,0,.6,1)' }}
-        />
+      {/* Two complete marks that cross-fade.
+          The previous version drew one circle and punched a crescent out of it
+          with a path filled in the page background colour. That failed twice:
+          the cutout was larger than the circle it bit into, so only a thin
+          sliver survived, and a background-coloured patch is not a hole — it
+          showed as a solid blob over the glass nav and the dark hero. */}
+      <svg viewBox="0 0 20 20" className="h-[18px] w-[18px]" aria-hidden="true">
+        {/* Sun */}
         <g
-          stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"
           style={{
             opacity: isDark ? 0 : 1,
-            transform: isDark ? 'rotate(35deg) scale(.6)' : 'none',
+            transform: isDark ? 'rotate(-45deg) scale(.7)' : 'none',
             transformOrigin: 'center',
-            transition: 'opacity .32s cubic-bezier(.4,0,.6,1), transform .3s cubic-bezier(0,0,.5,1)',
+            transition:
+              'opacity .32s cubic-bezier(.4,0,.6,1), transform .3s cubic-bezier(0,0,.5,1)',
           }}
         >
-          <path d="M10 1.4v1.7M10 16.9v1.7M18.6 10h-1.7M3.1 10H1.4M16.1 3.9l-1.2 1.2M5.1 14.9l-1.2 1.2M16.1 16.1l-1.2-1.2M5.1 5.1L3.9 3.9" />
+          <circle cx="10" cy="10" r="3.7" fill="currentColor" />
+          <g stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+            <path d="M10 1.6v1.6M10 16.8v1.6M18.4 10h-1.6M3.2 10H1.6M15.9 4.1l-1.1 1.1M5.2 14.8l-1.1 1.1M15.9 15.9l-1.1-1.1M5.2 5.2L4.1 4.1" />
+          </g>
         </g>
+
+        {/* Moon — one filled crescent, so it needs no background colour */}
         <path
-          d="M14.5 11.2A5.2 5.2 0 0 1 8.8 5.5a5.4 5.4 0 1 0 5.7 5.7Z"
-          fill={onStage ? '#000' : 'var(--ground)'}
+          d="M10 2.5a5 5 0 0 0 7.5 7.5 7.5 7.5 0 1 1-7.5-7.5Z"
+          fill="currentColor"
           style={{
             opacity: isDark ? 1 : 0,
-            transition: 'opacity .32s cubic-bezier(.4,0,.6,1)',
+            transform: isDark ? 'none' : 'rotate(45deg) scale(.7)',
+            transformOrigin: 'center',
+            transition:
+              'opacity .32s cubic-bezier(.4,0,.6,1), transform .3s cubic-bezier(0,0,.5,1)',
           }}
         />
       </svg>
