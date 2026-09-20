@@ -381,8 +381,8 @@ async function findLeads(terms, { limit = 200, includeHiring = true, brief = {} 
                     categories: brief.productCategories?.length
                         ? brief.productCategories
                         : [brief.productCategory].filter(Boolean),
-                    pages: 10,
-                    limit: 2500,
+                    pages: 7,
+                    limit: 1500,
                 }),
         });
     }
@@ -395,8 +395,8 @@ async function findLeads(terms, { limit = 200, includeHiring = true, brief = {} 
                     categories: brief.productCategories?.length
                         ? brief.productCategories
                         : [brief.productCategory].filter(Boolean),
-                    pages: 10,
-                    limit: 2500,
+                    pages: 7,
+                    limit: 1500,
                 }),
         });
     }
@@ -404,16 +404,20 @@ async function findLeads(terms, { limit = 200, includeHiring = true, brief = {} 
     if (audiences.includes('local')) {
         tasks.push({
             name: 'Local businesses',
-            // Overpass is the slowest source by an order of magnitude; it gets
-            // 45 seconds and whatever it has returned by then is used.
+            /*
+             * Overpass is the slowest source by an order of magnitude and
+             * frequently returns nothing at all. Serverless hosts cap a
+             * request at 60 seconds, and the model calls after this step need
+             * roughly 30 of them, so it gets a hard 12-second slice.
+             */
             run: () =>
                 withBudget(
                     searchLocalBusinesses({
                         tags: brief.osmTags || [],
-                        regions: markets,
-                        limit: 120,
+                        regions: markets.slice(0, 3),
+                        limit: 60,
                     }),
-                    45000
+                    Number(process.env.OSM_BUDGET_MS) || 12000
                 ),
         });
     }

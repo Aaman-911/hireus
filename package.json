@@ -1,0 +1,21 @@
+{
+  "name": "hireus",
+  "private": true,
+  "version": "1.0.0",
+  "description": "HireUS — AI mock interviewer, job search and client finder.",
+  "engines": { "node": ">=18" },
+  "scripts": {
+    "build": "cd client && npm install && npm run build",
+    "dev:server": "cd server && npm run dev",
+    "dev:client": "cd client && npm run dev"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.24.1",
+    "axios": "^1.13.1",
+    "cors": "^2.8.5",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
+    "express-rate-limit": "^8.3.0",
+    "helmet": "^8.2.0"
+  }
+}
